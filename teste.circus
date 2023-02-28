@@ -1,0 +1,31 @@
+
+channel chan1
+channel chan2 
+chanset cs1 == {|chan1|}
+process proc1 ^=
+begin
+  @ 
+  chan1?alpha -> chan2!(alpha+1) -> Skip [| cs1 |] chan1!10 -> Skip
+
+end
+process proc2 ^=
+begin
+  @ 
+  (chan1?alpha -> var beta @ beta := alpha; chan1!beta -> chan2!1 -> chan2!2 -> Skip)
+  |-|
+  chan1!10 -> chan2!11 -> 
+    (chan1!20 -> Skip |-| chan1!21 ->
+      (chan1!30 -> Skip |-| chan1!31 -> Skip))
+end
+process proc3 ^=
+begin
+  @ 
+  (chan1?alpha -> var beta @ beta := alpha; chan1!beta -> chan2!1 -> chan2!2 -> Skip)
+end
+process proc4 ^=
+begin
+  @ 
+  chan2?alpha -> chan1!0 -> Skip
+end
+
+:run proc1

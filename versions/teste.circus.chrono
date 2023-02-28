@@ -1,0 +1,27 @@
+channel out
+channel tick,time
+
+
+process Chrono ^=
+begin
+  state AState ^= [sec,min ]
+  AInit ^= [min,sec | sec' == min' && min' == 0]
+  IncSec ^= [min,sec | sec' == ((sec+1) mod 6) && min' == min]
+  IncMin ^= [min,sec | min' == ((min+1) mod 6) && sec' == sec]  
+  Run ^= (tick -> IncSec; (((sec==0) & IncMin) [] ((sec != 0) & Skip)))
+         []
+         (time -> out!min -> out!sec -> Skip)
+  X ^= Run; X
+  @       
+  AInit; X
+end
+
+process Ticker ^=
+begin
+  X ^= tick -> time; X
+  @ X
+end
+
+process Clock ^= (Chrono [|{|tick,time|}|] Ticker) /H {|tick|}
+
+:run Clock

@@ -1,0 +1,52 @@
+channel allocate_idle_eru, service_rescue, start_rescue
+channel wait, send_rescue_info_to_eru, process_message
+channel fault_activation, receive_message, error_detection
+channel drop_message, target_not_attended, find_idle_erus
+channel start_recovery, end_recovery 
+
+chanset ERUSignals      == {|allocate_idle_eru, service_rescue|}
+chanset RecoverySignals == {|start_recovery, end_recovery|}
+
+process ERU ^=
+begin
+  state Control ^= [allocated,total_erus]
+  InitControl   ^= [allocated,total_erus  
+                   |allocated' == 0 && total_erus' == 1]
+  AllocateState ^= [allocated 
+                   |allocated' == (allocated + 1)]
+  Allocate      ^= allocate_idle_eru -> AllocateState; Choose                  
+  ServiceState  ^= [allocated 
+                   |allocated' == (allocated - 1)]
+  Service ^= service_rescue -> ServiceState; Choose
+  Choose ^=  (allocated == 0) & Allocate
+            [] (allocated == total_erus) & Service
+            [] (allocated > 0 && allocated < total_erus) &
+               (Allocate [] Service)
+            
+  @ InitControl; Choose
+end
+
+process InitiateRescueOrFault ^=
+begin
+  CallCentreStart ^= start_rescue -> FindIdleEru
+  FindIdleEru ^= find_idle_erus -> (IdleEru [] (wait -> FindIdleEru))
+  IdleEru ^= allocate_idle_eru -> send_rescue_info_to_eru -> IR1
+  IR1 ^= process_message -> (FAReceiveMessage [] fault_activation -> IR2)
+  FAReceiveMessage ^= receive_message -> ServiceRescue
+  ServiceRescue ^= service_rescue -> CallCentreStart
+  IR2 ^= IR2Out [] (error_detection -> FAStartRecovery)
+  IR2Out ^= drop_message -> target_not_attended -> CallCentreStart
+  FAStartRecovey ^= start_recovery -> end_recovery -> ServiceRescue
+  @ CallCentreStart
+end
+
+process Recovery ^=
+begin
+  X ^= start_recovery -> recovery_executed -> end_recovery -> Skip; X
+  @ X
+end
+
+process ERSystem ^= 
+  InitiateRescueOrFault [| ERUSignals |] ERU
+
+:run ERSystem

@@ -1,0 +1,81 @@
+channel chan1
+channel chan2 
+process proc1 ^=
+begin
+  @ chan1?alpha -> var beta @ beta := alpha+1 ; chan2!(beta+2) -> Skip
+end
+
+
+
+(c|s| c1?a -> var b @ b := a+1 ; c2!(b+2) -> Skip )
+[10] (prefix input) 
+must be applied with:
+A = (var b @ (b := a+1 ; c2!(b+2) -> Skip))
+after applying [10] we get the transition to:
+(c + w0 \in T |
+ s; var a := w0 |
+ let a @ A )
+[11]
+A' = (b := a+1 ; c2!(b+2) -> Skip)
+(c + w0 \in T |
+ s; var a := w0 |
+ let a let b @ A' )
+
+[12] (let preservation) x2
+must be applied and we need to study the evolution of A with rule 14
+since A is a sequential composition
+ 
+[14] (sequential composition w/o Skip)
+A1 = (b := a+1)
+B = (c2!(b+2) -> Skip)
+(c + w0 \in T |
+ s; var a := w0 |
+ let a let b @ A1 ; B )
+
+  A1 [6] var assignment and preservation
+    (c + w0 \in T |
+     s; var a := w0 |
+     let a let b @ (b := a+1) ) =>
+     (c + w0 \in T + w1 = (w0+1)  |
+     s; var a := w0; var b := w1  |
+     let a let b @ Skip )
+
+B = (c2!(b+2) -> Skip)
+(c + w0 \in T + w1 = (w0+1)  |
+ s; var a := w0; var b := w1  |
+ let a let b @ Skip ; B )
+
+[15] sequential composition with Skip and then let preservation
+B = (c2!(b+2) -> Skip)
+(c + w0 \in T + w1 = (w0+1)  |
+ s; var a := w0; var b := w1  |
+ let a let b @ B )
+
+[9] Prefixed output
+(c + w0 \in T + w1 = (w0+1)  |
+ s; var a := w0; var b := w1  |
+ let a let b @ c2!(b+2) -> Skip )
+ = c2!(w2) =>
+(c + w0 \in T + w1 = (w0+1) + w2 = (w1+2)  |
+ s; var a := w0; var b := w1  |
+ let a let b @ Skip )
+ 
+ 
+ [13] let elimination x2
+(c + w0 \in T + w1 = (w0+1) + w2 = (w1+2)  |
+s; var a := w0; var b := w1  |
+let a let b @ Skip )
+ =>
+(c + w0 \in T + w1 = (w0+1) + w2 = (w1+2)  |
+s; var a := w0; var b := w1; end a; end b   |
+Skip )
+ 
+ 
+ 
+ 
+
+
+
+
+
+

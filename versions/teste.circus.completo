@@ -1,0 +1,71 @@
+channel a1, a2, a3, a4
+channel b1, b2, b3, b4
+channel c1, c2, c3, c4
+channel c, out
+process proc1 ^=
+begin
+  @ 
+  ((b1 -> b2 -> b3 -> Skip) [] (a1 -> a2 -> a3 -> Skip))
+    [|{|a1,b1|}|]
+  ((c1 -> b1 -> Skip) [] (c2 -> a1 -> Skip))
+end
+
+
+process proc2 ^=
+begin
+  @ 
+  ((b1 -> b2 -> b3 -> Skip) [] (a1 -> a2 -> a3 -> Skip))
+    [|{|a1,b1|}|]
+  (((c1 -> b1 -> Skip) [] (c2 -> a1 -> Skip))[](c3 -> Skip))
+end
+
+
+process proc3 ^=
+begin
+  @ 
+  ((b2 -> b3 -> Skip) [] (a1 -> a2 -> a3 -> Skip))
+    [|{|a1,b1|}|]
+  ((c1 -> b1 -> Skip) [] (c2 -> a1 -> Skip))
+end
+
+process proc4 ^=
+begin
+  @ 
+  ((b2 -> b3 -> Skip) [|{|a1,b1|}|] (c1 -> b1 -> Skip))
+end
+
+
+process proc5 ^=
+begin
+  @ 
+  ((c1 -> b1 -> Skip) [] (c2 -> a1 -> Skip))
+    [|{|a1,b1|}|]  
+  (b2 -> b3 -> Skip)
+end
+
+
+process proc6 ^=
+begin
+  @ 
+  (a1?alpha -> a2?beta -> a3!beta+1 -> Skip) [|{|a2|}|] (b1 -> a2!2 -> Skip)
+end
+
+process Scope ^=
+begin
+  Act ^= c?x -> c!x -> Skip
+  @
+  c?x -> (c!x -> Act; c!x -> Skip)
+end
+
+process ParState ^=
+begin
+  state myState ^= [x,y,z]
+  @ 
+  x:=0;y:=0;z:=0;
+  ((x:=1;y:=1;z:=1) [|{|x|}|{||}|{|y|}|] (x:=2;y:=2;z:=2));
+  out!x -> out!y -> out!z -> Skip
+end
+
+
+
+:run proc2

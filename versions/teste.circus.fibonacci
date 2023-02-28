@@ -1,0 +1,14 @@
+channel out
+
+process Fibonacci ^=
+begin
+  state FibState == [x,y]
+  InitFibState == [x,y | x' == y' && x' == 1 ]
+  OutFibState == [y,x | y' == (x + y) && x' == y ]
+  InitFib ^= out!1 -> out!1 -> InitFibState
+  OutFib ^= out!(x+y) -> OutFibState; OutFib
+  @ 
+  InitFib; OutFib
+end
+
+:run Fibonacci
